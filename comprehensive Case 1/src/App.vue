@@ -1,11 +1,5 @@
 <template>
-  <div class="container">
-    <Cursor />
-    <Expression />
-  </div>
+  <RouterView />
 </template>
 
-<script lang="ts" setup>
-import Cursor from './components/cursor/Cursor.vue'
-import Expression from './components/expression/Expression.vue'
-</script>
+<script lang="ts" setup></script>

@@ -4,10 +4,11 @@
 
 <script setup lang="ts">
 import { gsap } from 'gsap'
-import paperFull from 'paper'
-import { onMounted, ref, type Ref } from 'vue'
+import * as paper from 'paper'
+import { getCurrentInstance, onMounted, ref, type Ref } from 'vue'
 
 var myCanvas: Ref<HTMLCanvasElement> | Ref<null> = ref(null)
+var currentInstance = getCurrentInstance()
 
 onMounted(() => {
   console.clear()
@@ -15,96 +16,118 @@ onMounted(() => {
 })
 
 class myCanvasController {
-  static paper: paper.PaperScope = paperFull // paper
   static cursorCircleRadiusSize: number = 20
   static cursorSize: number = 3
-  static currentPoint: paper.Point = new this.paper.Point(
+  static currentPoint: paper.Point = new paper.Point(
     -this.cursorCircleRadiusSize,
     -this.cursorCircleRadiusSize
   )
+  static cursorDot: paper.Path.Circle
+  static cursorCircle: paper.Path.Circle
   static cursorSpeed = {
-    move: 0.25,
+    move: 0.2,
     changeSize: 0.05
   }
   static otherPath: Array<paper.Path> = new Array()
   static otherSpeed = {
     dropSpeed: 0.2
   }
+  static parentElement: HTMLElement
+  /**
+   * 隐藏光标
+   * 修改父元素达到效果
+   * @return parentElement {HTMLElement} 父元素
+   */
+  static hiddenCursor(): void {
+    let parentElement = getMyCanvasParent() as HTMLElement
+    parentElement.style.cursor = 'none'
+    this.parentElement = parentElement
 
-  static init(canvas: HTMLCanvasElement): void {
-    this.paper.setup(canvas)
-    this.initHandler()
-    this.hiddenCursor(this.getMyCanvasParent() as HTMLElement)
-  }
-
-  static getTool(): paper.Tool {
-    let tool = new this.paper.Tool()
-    return tool
-  }
-
-  static getView(): paper.View {
-    let view = this.paper.view
-    return view
-  }
-
-  static getMyCanvasParent(): HTMLElement | null | undefined {
-    const parent = myCanvas.value?.parentElement
-    return parent
-  }
-
-  static hiddenCursor(el: HTMLElement): HTMLElement {
-    console.log(el)
-    el.style.cursor = 'none'
-    return el
-  }
-
-  static initHandler(): void {
-    let tool = this.getTool() // paper.Tool
-    let view = this.getView() // paper.View
-    let cursorDot: paper.Path.Circle = new this.paper.Path.Circle(
-      this.currentPoint,
-      this.cursorSize
-    ) // cursor target dot
-    cursorDot.strokeColor = this.paper.Color.random()
-    cursorDot.fillColor = cursorDot.strokeColor
-    let cursorCircle = new this.paper.Path.Circle(this.currentPoint, this.cursorCircleRadiusSize)
-    cursorCircle.strokeColor = this.paper.Color.random()
-    cursorCircle.strokeWidth = 3
-
-    tool.onMouseDown = (e: paper.MouseEvent): void => {
-      // 鼠标右键
-      // @ts-ignore
-      if (e.event.button == 2) {
-        removePath()
-        return
+    // 光标事件
+    parentElement.addEventListener('mousemove', (e: MouseEvent) => {
+      mousemove(e)
+    })
+    parentElement.addEventListener('mousedown', (e: MouseEvent) => {
+      e.preventDefault()
+      if (e.button === 2) {
+        mouseRightDown(e)
+      } else {
+        mouseLeftDown(e)
       }
+    })
+    parentElement.addEventListener('mouseup', (e: MouseEvent) => {
+      mouseLeftUp(e)
+    })
+    // @ts-ignore
+    parentElement.addEventListener('contextmenu', (e: PointerEvent) => {
+      // 阻止默认右键菜单
+      e.preventDefault()
+    })
 
-      // 鼠标左键
+    const mouseRightDown = (e: MouseEvent) => {
+      removePath()
+    }
+
+    const mouseLeftDown = (e: MouseEvent) => {
       this.cursorCircleRadiusSize = 5
       this.cursorSpeed.changeSize = 0.1
-      addPath(cursorCircle.position)
-      changeCursorCircleColor(cursorCircle)
+      addPath(this.cursorCircle.position)
+      changeCursorCircleColor(this.cursorCircle)
     }
 
-    tool.onMouseMove = (e: paper.MouseEvent): void => {
-      this.currentPoint = e.point
+    const mousemove = (e: MouseEvent) => {
+      this.currentPoint = new paper.Point(e.x, e.y)
     }
 
-    tool.onMouseUp = (e: paper.MouseEvent): void => {
+    const mouseLeftUp = (e: MouseEvent) => {
       this.cursorCircleRadiusSize = 20
       this.cursorSpeed.changeSize = 0.03
     }
 
-    tool.onKeyDown = (e: paper.KeyEvent): void => {
-      // @ts-ignore
-      if (e.key === 'z' && e.event.ctrlKey === true) {
-        removePath()
-      }
+    const removePath = () => {
+      this.otherPath.pop()?.remove()
     }
 
+    const addPath = (point: paper.Point) => {
+      let circle = new paper.Path.Circle(point, 20)
+      circle.strokeColor = this.cursorCircle.strokeColor
+      circle.strokeWidth = 5
+      this.otherPath.push(circle)
+    }
+
+    const changeCursorCircleColor = (circle: paper.Path.Circle) => {
+      // circle.strokeColor = this.paper.Color.random()
+      gsap.to(circle.strokeColor, {
+        red: Math.random(),
+        green: Math.random(),
+        blue: Math.random(),
+        duration: 0.5
+      })
+    }
+
+    function getMyCanvasParent(): HTMLElement | null | undefined {
+      const parent = myCanvas.value?.parentElement
+      return parent
+    }
+  }
+
+  static initCursor = () => {
+    this.hiddenCursor()
+    this.cursorDot = new paper.Path.Circle(this.currentPoint, this.cursorSize) // cursor target dot
+    this.cursorDot.strokeColor = paper.Color.random()
+    this.cursorDot.fillColor = this.cursorDot.strokeColor
+    this.cursorCircle = new paper.Path.Circle(this.currentPoint, this.cursorCircleRadiusSize)
+    this.cursorCircle.strokeColor = paper.Color.random()
+    this.cursorCircle.strokeWidth = 3
+  }
+
+  static initHandler(): void {
+    let tool = getTool() // paper.Tool
+    let view = getView() // paper.View
+
     view.onFrame = (e: paper.Item) => {
-      cursorDot.position = this.currentPoint
-      drawCursorCircle(cursorCircle)
+      this.cursorDot.position = this.currentPoint
+      drawCursorCircle(this.cursorCircle)
     }
 
     const drawCursorCircle: (cursorCicle: paper.Path.Circle) => void = createClosuresFunction(
@@ -132,32 +155,27 @@ class myCanvasController {
         function lerpPoint(origin: paper.Point, target: paper.Point, delta: number): paper.Point {
           let x = lerp(origin.x, target.x, delta)
           let y = lerp(origin.y, target.y, delta)
-          let newPoint = new myCanvasController.paper.Point(x, y)
+          let newPoint = new paper.Point(x, y)
           return newPoint
         }
       }
     )
 
-    const removePath = () => {
-      this.otherPath.pop()?.remove()
+    function getTool(): paper.Tool {
+      let tool = new paper.Tool()
+      return tool
     }
 
-    const addPath = (point: paper.Point) => {
-      let circle = new this.paper.Path.Circle(point, 20)
-      circle.strokeColor = cursorCircle.strokeColor
-      circle.strokeWidth = 5
-      this.otherPath.push(circle)
+    function getView(): paper.View {
+      let view = paper.view
+      return view
     }
+  }
 
-    const changeCursorCircleColor = (circle: paper.Path.Circle) => {
-      // circle.strokeColor = this.paper.Color.random()
-      gsap.to(circle.strokeColor, {
-        red: Math.random(),
-        green: Math.random(),
-        blue: Math.random(),
-        duration: 0.5
-      })
-    }
+  static init(canvas: HTMLCanvasElement): void {
+    paper.setup(canvas)
+    this.initHandler()
+    this.initCursor()
   }
 }
 

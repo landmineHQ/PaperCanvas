@@ -6,9 +6,7 @@
 </template>
 
 <script setup lang="ts">
-function t1() {
-  console.log(arguments)
-}
+function t1() {}
 </script>
 
 <style lang="scss" scoped>
