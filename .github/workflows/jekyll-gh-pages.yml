@@ -50,9 +50,6 @@ jobs:
         uses: actions/upload-pages-artifact@v2 # 这个action会根据配置自动创建一个名为github-pages的artifact，包含dist文件夹的内容
         with:
           path: dist # 指定要上传的目录
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2 # 这个action会根据配置自动部署artifact到gh-pages分支
   # Deployment job
   deploy:
     environment:
