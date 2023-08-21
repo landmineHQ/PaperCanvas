@@ -1,6 +1,6 @@
 {
-  "name": "canvas-cursor",
-  "version": "1.0.0",
+  "name": "canvas-tutorial",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
