@@ -6,14 +6,37 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * This Component is a canvas cursor which is used to display the highlighted cursor
+ * @description canvas cursor
+ * @property {Boolean} showChains
+ */
 // @ts-ignore
 import { type Cursor, type EventHandler, cursor, chain } from "./interface/interface"
-import { onMounted } from 'vue'
+import { onMounted, reactive, toRef, watch } from 'vue'
 import paperFull from 'paper'
 import gsap from 'gsap'
 onMounted(() => {
     MyCanvas.init()
 })
+const props = defineProps({
+    showChains: {
+        default: false,
+        type: Boolean,
+    }
+})
+let originalProps = reactive({ ...props })
+watch(props, () => {
+    if (originalProps.showChains !== props.showChains) {
+        if (props.showChains === true) {
+            MyCanvas.initChain()
+        } else {
+            MyCanvas.clearChainPaths()
+        }
+    }
+
+    originalProps = reactive({ ...props })
+}, { deep: true })
 
 class MyCanvas {
     /**
@@ -30,10 +53,26 @@ class MyCanvas {
         // add points to the path
         const start = new paperFull.Point(paperFull.view.center)
         for (var i = 0; i < chain.points; i++) {
-            // chain.path?.add( new paperFull.Point( start.x + i * chain.length, start.y ) )
             chain.path?.add(start)
         }
         return chain.path
+    }
+    static chainManager = {
+        chainMove(q: paper.Path.Circle) {
+            let chainPath = chain.path
+            if (chainPath === null) return
+            if (props.showChains === false) return
+            chainPath.firstSegment.point = q.position
+            for (let i = 0; i < chain.points - 1; i++) {
+                const segment = chainPath.segments[i]
+                const nextSegment = segment.next
+                const vector = segment.point.subtract(nextSegment.point)
+                vector.length = chain.length
+                const gap = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2))
+                nextSegment.point = segment.point.subtract(vector)
+            }
+            chainPath.smooth({ type: "continuous" })
+        }
     }
     /**
      * initializes the canvas cursor
@@ -56,7 +95,7 @@ class MyCanvas {
     }
 
     static initOnFrame() {
-        const chainPath = this.initChain()
+        this.initChain()
         const { p, q } = this.initCursor()
 
 
@@ -84,19 +123,7 @@ class MyCanvas {
             }
             p.scale(tmp.currentCursorPointSize / p.bounds.width * 2, p.position)
             q.scale(tmp.currentCursorCircleSize / q.bounds.width * 2, q.position)
-
-            // chain过渡
-            if (chainPath === null) return
-            chainPath.firstSegment.point = q.position
-            for (let i = 0; i < chain.points - 1; i++) {
-                const segment = chainPath.segments[i]
-                const nextSegment = segment.next
-                const vector = segment.point.subtract(nextSegment.point)
-                vector.length = chain.length
-                const gap = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2))
-                nextSegment.point = segment.point.subtract(vector)
-            }
-            chainPath.smooth({ type: "continuous" })
+            MyCanvas.chainManager.chainMove(q)
         }
         paperFull.view.onFrame = onFrame
 
@@ -107,7 +134,8 @@ class MyCanvas {
     }
 
     static clearChainPaths() {
-        gsap.to(chain, { length: 0, duration: 3 })
+        chain.path?.remove()
+        chain.path = null
     }
 
     static mouseEventHandler: EventHandler = {
@@ -118,8 +146,10 @@ class MyCanvas {
         },
         onMove(e: MouseEvent) {
             if (cursor.point === undefined) return
-            cursor.point.x = e.offsetX
-            cursor.point.y = e.offsetY
+            let currentTarget: HTMLDivElement = e.currentTarget as HTMLDivElement
+            let bounds = currentTarget.getBoundingClientRect()
+            cursor.point.x = e.clientX - bounds.left
+            cursor.point.y = e.clientY - bounds.top
         },
         onDown(e: MouseEvent) {
             cursor.active = true
