@@ -1,0 +1,42 @@
+header {
+    line-height: 1.5;
+}
+
+nav {
+    position: relative;
+    width: 100%;
+    font-size: 12px;
+    text-align: center;
+    flex: none;
+
+    >a.router-link-exact-active {
+        color: var(--color-text);
+    }
+
+    >a.router-link-exact-active:hover {
+        background-color: transparent;
+    }
+
+    >a {
+        display: inline-block;
+        padding: .5rem 1rem;
+        border-top: 1px solid var(--color-border);
+        text-transform: capitalize;
+    }
+
+    >a:first-of-type {
+        border: 0;
+    }
+}
+
+main {
+    flex: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+
+    >* {
+        flex: auto;
+    }
+}
