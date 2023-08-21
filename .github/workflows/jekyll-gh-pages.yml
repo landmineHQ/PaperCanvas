@@ -45,12 +45,14 @@ jobs:
       - name: 构建
         run: |
             npm run build
-      # 执行部署
-      - name: 部署
-        uses: JamesIves/github-pages-deploy-action@releases/v3 # 这个action会根据配置自动推送代码到指定分支
+      # 创建artifact
+      - name: 创建artifact
+        uses: actions/upload-pages-artifact@v2 # 这个action会根据配置自动创建一个名为github-pages的artifact，包含dist文件夹的内容
         with:
-          BRANCH: gh-pages  ##指定推送到的远程分支
-          FOLDER: ./dist # 指定构建之后要推送哪个目录的代码
+          path: dist # 指定要上传的目录
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2 # 这个action会根据配置自动部署artifact到gh-pages分支
   # Deployment job
   deploy:
     environment:
