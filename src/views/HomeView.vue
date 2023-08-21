@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import CanvasCursor from "@/components/canvasCursor/CanvasCursor.vue"
 </script>
 
 <template>
-  <main>
-    <TheWelcome />
-  </main>
+  <CanvasCursor>
+    <div slot:default>
+      <h1>hello world</h1>
+    </div>
+  </CanvasCursor>
 </template>
+
+<style lang="scss" scoped>
+h1 {
+  text-align: center;
+  text-transform: uppercase;
+  user-select: none;
+}
+</style>

@@ -1,0 +1,13 @@
+.container {
+    width: 100%;
+    height: 100%;
+    cursor: none;
+}
+
+#myCanvas[resize] {
+    position: absolute;
+    border: 3px solid #ccc;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
