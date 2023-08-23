@@ -53,13 +53,13 @@ class MyCanvas {
         chain.path.sendToBack()
 
         // add points to the path
-        const start = new paperFull.Point(paperFull.view.center)
+        const start = new paperFull.Point(cursor.point as paper.Point)
         for (var i = 0; i < chain.points; i++) {
             chain.path?.add(start)
         }
         return chain.path
     }
-    static chainManager = {
+    static chainController = {
         chainMove(q: paper.Path.Circle) {
             let chainPath = chain.path
             if (chainPath === null) return
@@ -97,8 +97,8 @@ class MyCanvas {
     }
 
     static initOnFrame() {
-        this.initChain()
         const { p, q } = this.initCursor()
+        this.initChain()
 
 
         const originalConfig: Cursor["config"] = JSON.parse(JSON.stringify(cursor.config))
@@ -125,7 +125,7 @@ class MyCanvas {
             }
             p.scale(tmp.currentCursorPointSize / p.bounds.width * 2, p.position)
             q.scale(tmp.currentCursorCircleSize / q.bounds.width * 2, q.position)
-            MyCanvas.chainManager.chainMove(q)
+            MyCanvas.chainController.chainMove(q)
         }
         paperFull.view.onFrame = onFrame
 
