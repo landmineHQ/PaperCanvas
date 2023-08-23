@@ -28,16 +28,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
+      #- name: Setup Pages
+      #  uses: actions/configure-pages@v3
+      #- name: Build with Jekyll
+      #  uses: actions/jekyll-build-pages@v1
+      #  with:
+      #    source: ./
+      #    destination: ./_site
+      #- name: Upload artifact
+      #  uses: actions/upload-pages-artifact@v2
+      # 执行依赖安装
+      - name: 安装依赖
+        run: |
+            npm install
+      # 执行构建步骤
+      - name: 构建
+        run: |
+            npm run build
+      # 创建artifact
+      - name: 创建artifact
+        uses: actions/upload-pages-artifact@v2 # 这个action会根据配置自动创建一个名为github-pages的artifact，包含dist文件夹的内容
         with:
-          source: ./
-          destination: ./_site
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
-
+          path: dist # 指定要上传的目录
   # Deployment job
   deploy:
     environment:
