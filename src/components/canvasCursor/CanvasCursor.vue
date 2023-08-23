@@ -49,6 +49,8 @@ class MyCanvas {
             strokeWidth: 20,
             strokeCap: 'round',
         })
+        // send the path to the back of other item with the same parent
+        chain.path.sendToBack()
 
         // add points to the path
         const start = new paperFull.Point(paperFull.view.center)
