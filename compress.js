@@ -1,9 +1,20 @@
-const compressing = require('compressing')
+console.log("Starting compressing...");
+const compressing = require('compressing');
+const path = require('path');
+if (compressing === undefined || !compressing) {
+    console.log("Required Compressing, please install it first before running")
+}
+// configure
+const config = {
+    compressedFileName: "dist.zip",
+    compressingDirectory: "dist"
+}
 
-compressing.zip.compressDir('dist', 'dist.zip')
+// 压缩dist文件夹里的所有文件到dist.zip
+compressing.zip.compressDir(config.compressingDirectory, config.compressedFileName, { ignoreBase: true })
     .then(() => {
-        console.log('压缩完成');
+        console.log('Compressing task finished successfully' + '\ntarget directory ' + path.join(__dirname, config.compressedFileName));
     })
-    .catch((error) => {
-        console.error('压缩失败', error);
+    .catch(err => {
+        console.error('Compressing task failed, please check your configuration', err);
     });
