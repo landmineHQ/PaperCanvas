@@ -12,10 +12,10 @@
  * @property {Boolean} showChains
  */
 // @ts-ignore
-import { type Cursor, type EventHandler, cursor, chain } from "./interface/interface"
-import { onMounted, reactive, toRef, watch } from 'vue'
+import { type Cursor, type EventHandler, type Chain, cursor, chain } from "./interface/interface"
+import { onMounted, watch, getCurrentInstance } from 'vue'
 import paperFull from 'paper'
-import gsap from 'gsap'
+import { gsap } from "gsap";
 onMounted(() => {
     MyCanvas.init()
 })
@@ -23,9 +23,14 @@ const props = defineProps({
     showChains: {
         default: false,
         type: Boolean,
+    },
+    chainOptions: {
+        default: JSON.parse(JSON.stringify(chain)),
+        type: Object,
     }
 })
-let originalProps = reactive({ ...props })
+Object.assign(chain, props.chainOptions)
+let originalProps = JSON.parse(JSON.stringify(props))
 watch(props, () => {
     if (originalProps.showChains !== props.showChains) {
         if (props.showChains === true) {
@@ -34,8 +39,11 @@ watch(props, () => {
             MyCanvas.clearChainPaths()
         }
     }
-
-    originalProps = reactive({ ...props })
+    if (originalProps.chainOptions.points !== props.chainOptions.points
+        || originalProps.chainOptions.length !== props.chainOptions.length) {
+        MyCanvas.updateChainPaths()
+    }
+    originalProps = JSON.parse(JSON.stringify(props))
 }, { deep: true })
 
 class MyCanvas {
@@ -138,6 +146,38 @@ class MyCanvas {
     static clearChainPaths() {
         chain.path?.remove()
         chain.path = null
+    }
+
+    static updateChainPaths() {
+        // detect chain points
+        let newPoints = parseInt(props.chainOptions.points)
+        if (isNaN(newPoints) || newPoints <= 0) return
+        let oldPoints = chain.points
+        if (newPoints !== oldPoints) {
+            if (newPoints < oldPoints) {
+                for (let i = newPoints; i < oldPoints; i++) {
+                    chain.path?.removeSegment(chain.path.segments.length - 1)
+                }
+            } else if (newPoints > oldPoints) {
+                for (let i = newPoints; i > oldPoints; i--) {
+                    chain.path?.add(chain.path.lastSegment)
+                }
+            } else {
+                console.warn(`[${getCurrentInstance.name}]: ${chain.points}`);
+            }
+            chain.points = newPoints
+        }
+
+        // detect chain length
+        let newLength = parseInt(props.chainOptions.length)
+        if (isNaN(newLength)) return
+        let oldLength = chain.length
+        if (newLength !== oldLength) {
+            gsap.to(chain, {
+                length: newLength,
+                duration: 1
+            })
+        }
     }
 
     static mouseEventHandler: EventHandler = {
