@@ -58,7 +58,7 @@ const cursor: Cursor = {
 
 type Chain = typeof chain
 
-const chain: { path: paper.Path | null, [key: string]: any } = {
+const chain: { [key: string]: any } = {
     points: 45,
     length: 25,
     path: null,

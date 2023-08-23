@@ -13,7 +13,7 @@
  */
 // @ts-ignore
 import { type Cursor, type EventHandler, type Chain, cursor, chain } from "./interface/interface"
-import { onMounted, watch, getCurrentInstance } from 'vue'
+import { onMounted, watch, getCurrentInstance, type PropType } from 'vue'
 import paperFull from 'paper'
 import { gsap } from "gsap";
 onMounted(() => {
@@ -25,8 +25,8 @@ const props = defineProps({
         type: Boolean,
     },
     chainOptions: {
-        default: JSON.parse(JSON.stringify(chain)),
-        type: Object,
+        default: chain,
+        type: Object as PropType<Chain>,
     }
 })
 Object.assign(chain, props.chainOptions)
