@@ -56,6 +56,8 @@ const cursor: Cursor = {
     }
 }
 
+type Chain = typeof chain
+
 const chain: { path: paper.Path | null, [key: string]: any } = {
     points: 45,
     length: 25,
@@ -73,6 +75,7 @@ interface EventHandler {
 export {
     type Cursor,
     type EventHandler,
+    type Chain,
     cursor,
     chain,
 }
