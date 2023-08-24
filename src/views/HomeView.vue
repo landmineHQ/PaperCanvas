@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CanvasCursor from "@/components/canvasCursor/CanvasCursor.vue"
+import CanvasCursor from "@/components/canvasCursor/index.vue"
 import { reactive, ref } from "vue";
 const showChain = ref(true)
 const chainOptions = reactive({
