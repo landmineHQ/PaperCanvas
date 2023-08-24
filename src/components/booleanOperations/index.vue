@@ -31,7 +31,7 @@ const props = defineProps({
 const myCanvas: Ref<HTMLCanvasElement | null> = ref(null)
 onMounted(() => {
     App.init(myCanvas.value as HTMLCanvasElement)
-    myCanvas.value?.addEventListener("mousedown", () => {
+    myCanvas.value?.addEventListener("mousedown", (e: MouseEvent) => {
         console.log(e);
     })
 })
