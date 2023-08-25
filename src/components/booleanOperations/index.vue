@@ -14,6 +14,7 @@
 import { type PropType, onMounted, ref, type Ref } from 'vue'
 import { type OperationsType } from './interface/interface'
 import paperFull from 'paper';
+import { gsap } from 'gsap';
 const props = defineProps({
     operation: {
         default: "subtract",
@@ -31,9 +32,6 @@ const props = defineProps({
 const myCanvas: Ref<HTMLCanvasElement | null> = ref(null)
 onMounted(() => {
     App.init(myCanvas.value as HTMLCanvasElement)
-    myCanvas.value?.addEventListener("mousedown", (e: MouseEvent) => {
-        console.log(e);
-    })
 })
 class App {
     /**
@@ -45,7 +43,7 @@ class App {
      * @param group {paper.Group} - the group of paperJS
      */
     private group: paper.Group;
-    private activatedItem!: paper.Item | null;
+    private selectedItem!: paper.Item | null;
 
     /**
      * 构造函数
@@ -63,7 +61,7 @@ class App {
      * @param pathItem 
      */
     drawCanvas(pathItem: paper.PathItem) {
-        pathItem.insertBelow(this.group)
+        this.group.insertChild(0, pathItem)
     }
 
     /**
@@ -82,23 +80,30 @@ class App {
         this.paper.view.onFrame = frame
     }
 
-    hookMouseDrage(mouseDrage: paper.View["onMouseDrag"]) {
-        let tool = new this.paper.Tool()
-        tool.onMouseDown = (e: MouseEvent) => {
-            console.log(e);
-
+    /**
+     * 鼠标拖拽
+     * @param renderlessGroup {paper.Group} - 逻辑运算组 
+     * @param mouseDrage {paper.MouseEvent} - 鼠标事件
+     */
+    hookMouseDrage(renderlessGroup: paper.Group, mouseDrage: (event: paper.MouseEvent) => void) {
+        this.paper.view.onMouseDown = (e: paper.MouseEvent) => {
+            const hitResult = renderlessGroup.hitTest(e.point)
+            this.selectedItem = hitResult && hitResult.item
+            if (this.selectedItem === null) return
+            gsap.to(this.selectedItem.position, {
+                x: e.point.x,
+                y: e.point.y,
+            })
         }
-
-        /* this.paper.view.onMouseDown = (e: MouseEvent) => {
-            const hitResult = this.group.hitTest(new paperFull.Point([e.x, e.y]))
-            this.activatedItem = hitResult && hitResult.item
-            console.log(this.activatedItem);
-
+        this.paper.view.onMouseDrag = mouseDrage
+        this.paper.view.onMouseUp = (e: paper.MouseEvent) => {
+            if (this.selectedItem === null) return
+            gsap.to(this.selectedItem.position, {
+                x: this.group.view.center.x,
+                y: this.group.view.center.y,
+            })
+            this.selectedItem = null
         }
-        this.paper.view.onMouseDown = mouseDrage
-        this.paper.view.onMouseUp = () => {
-            this.activatedItem = null
-        } */
     }
 
     /**
@@ -110,42 +115,49 @@ class App {
         // ============ initApp ============
         const app = new App(canvasElement)
 
-        // view center
+        /** view center */
         const viewCenter = app.paper.view.center
-        // computed path
+        /** computed path */
         let result: paper.PathItem;
-
-        // ============ group ============
-        /**
-         * this group is invisible
-         * 该组用于逻辑处理，不可见
-         */
-        const invisibleGroup = new paperFull.Group({ insert: false })
+        // ============ boolean operate group ============
+        /** 仅供布尔运算的group */
+        const renderlessGroup = new paperFull.Group({ insert: false })
         // ============ ring ============
         const innerRing = new paperFull.Path.Circle({
             position: viewCenter,
             radius: 100,
-            parent: invisibleGroup,
+            parent: renderlessGroup,
+            fillColor: 'white'
         })
         const outerRing = new paperFull.Path.Circle({
             position: viewCenter,
             radius: 150,
-            parent: invisibleGroup,
+            parent: renderlessGroup,
+            fillColor: 'white'
         })
-        // compute the ring
+        /** compute the ring */
         const ring = outerRing.subtract(innerRing)
         // ============ square ============
         const square = new paperFull.Path.Rectangle({
             position: viewCenter,
             size: 350,
-            parent: invisibleGroup,
+            parent: renderlessGroup,
+            radius: 30,
+            fillColor: new paperFull.Color('white')
         })
+        square.insertBelow(ring)
         // ============ animation on frame ============
         app.onFrame((e: any) => {
             e = e as { count: number, time: number, delta: number }
             // move the ring around
-            let offset = new paperFull.Point([140, 80]).multiply([Math.sin(e.count / 60), Math.cos(e.count / 60)])
-            ring.position = app.paper.view.center.add(offset)
+            if (app.selectedItem !== ring) {
+                const offset = new paperFull.Point([150, 100]).multiply([Math.sin(e.count / 60), Math.cos(e.count / 60)])
+                const newPosition = app.paper.view.center.add(offset)
+                gsap.to(ring.position, {
+                    x: newPosition.x,
+                    y: newPosition.y,
+                })
+            }
 
             // run boolean operations
             if (result !== undefined) {
@@ -153,13 +165,18 @@ class App {
             }
             result = square[props.operation](ring as paper.PathItem & true)
             result.fillColor = new paperFull.Color(props.fillColor)
+            result.selected = true
 
             app.drawCanvas(result)
         })
         // ============ mouseDrage ============
-        app.hookMouseDrage((e: MouseEvent) => {
-            console.log(e);
-
+        app.hookMouseDrage(renderlessGroup, (e: paper.MouseEvent) => {
+            // 没有选中无渲染层则返回
+            if (app.selectedItem === null) return
+            gsap.to(app.selectedItem.position, {
+                x: e.point.x,
+                y: e.point.y,
+            })
         })
         // ============ initApp return ============
         // 返回app实例
